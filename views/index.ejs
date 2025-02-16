@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task List</title>
+</head>
+<body>
+    <h1>Welcome, <%= user.name %></h1>
+    <a href="/logout">Logout</a>
+    <a href="/tasks/new">Add New Task</a>
+
+    <!-- Task Filtering and Searching -->
+    <form action="/" method="GET">
+        <input type="text" name="search" placeholder="Search tasks by title" />
+        <select name="status">
+            <option value="">All</option>
+            <option value="Pending">Pending</option>
+            <option value="Completed">Completed</option>
+        </select>
+        <button type="submit">Filter</button>
+    </form>
+
+    <!-- Sorting Options -->
+    <form action="/" method="GET">
+        <label for="sort">Sort by:</label>
+        <select name="sort" id="sort" onchange="this.form.submit()">
+            <option value="desc" <% if (sortOrder === 'desc') { %> selected <% } %>>Newest First</option>
+            <option value="asc" <% if (sortOrder === 'asc') { %> selected <% } %>>Oldest First</option>
+        </select>
+    </form>
+    
+    
+
+    <ul>
+        <% tasks.forEach(task => { %>
+            <li>
+                <strong><%= task.title %></strong> - <%= task.status %> - Created by: <%= task.userName %>
+                <% if (task.status !== 'Completed') { %>
+                    <form action="/tasks/complete/<%= task._id %>" method="POST">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <button type="submit">Mark as Complete</button>
+                    </form>                    
+                <% } %>
+            </li>
+        <% }); %>
+    </ul>
+</body>
+</html>

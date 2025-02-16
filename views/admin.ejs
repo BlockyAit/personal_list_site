@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+</head>
+<body>
+    <h1>Admin Panel</h1>
+    <a href="/logout">Logout</a>
+
+    <h2>All Tasks</h2>
+    <ul>
+        <% tasks.forEach(task => { %>
+            <li>
+                <strong><%= task.title %></strong> - <%= task.status %> - Assigned to: <%= task.userId.name %>
+            </li>
+        <% }); %>
+    </ul>
+</body>
+</html>
+
