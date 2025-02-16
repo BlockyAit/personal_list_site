@@ -1,4 +1,3 @@
-// server.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -42,7 +41,7 @@ const TaskSchema = new mongoose.Schema({
   status: { type: String, enum: ['Pending', 'Completed'], default: 'Pending' },
   createdAt: { type: Date, default: Date.now },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  userName: { type: String } // Store user's name
+  userName: { type: String }
 });
 
 const Task = mongoose.model('Task', TaskSchema);
@@ -63,7 +62,7 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
-// Routes
+// Home Page Route
 app.get('/', authenticateToken, async (req, res) => {
   const { status, search, sort } = req.query;
   let query = { userId: req.user.id };
@@ -71,93 +70,94 @@ app.get('/', authenticateToken, async (req, res) => {
   if (status) query.status = status;
   if (search) query.title = new RegExp(search, 'i');
 
-  const sortOrder = sort || 'desc'; // Default to 'desc' if not provided
-  const sortOption = sortOrder === 'desc' ? -1 : 1;
+  const sortOrder = sort === 'oldest' ? 1 : -1;
+  const tasks = await Task.find(query).sort({ createdAt: sortOrder });
 
-  const tasks = await Task.find(query).sort({ createdAt: sortOption });
-
-  res.render('index', { user: req.user, tasks, csrfToken: req.csrfToken(), sortOrder });
-});
-app.get('/', authenticateToken, async (req, res) => {
-  const { status, search, sort } = req.query;
-  let query = { userId: req.user.id };
-
-  if (status) query.status = status;
-  if (search) query.title = new RegExp(search, 'i');
-
-  const sortOrder = sort || 'desc'; // Default to 'desc' if not provided
-  const sortOption = sortOrder === 'desc' ? -1 : 1;
-
-  const tasks = await Task.find(query).sort({ createdAt: sortOption });
-
-  res.render('index', { user: req.user, tasks, csrfToken: req.csrfToken(), sortOrder });
-});
-app.get('/', authenticateToken, async (req, res) => {
-  const { status, search, sort } = req.query;
-  let query = { userId: req.user.id };
-
-  if (status) query.status = status;
-  if (search) query.title = new RegExp(search, 'i');
-
-  const sortOrder = sort || 'desc'; // Default to 'desc' if not provided
-  const sortOption = sortOrder === 'desc' ? -1 : 1;
-
-  const tasks = await Task.find(query).sort({ createdAt: sortOption });
-
-  res.render('index', { user: req.user, tasks, csrfToken: req.csrfToken(), sortOrder });
-});
-app.get('/', authenticateToken, async (req, res) => {
-    const { status, search, sort } = req.query;
-    let query = { userId: req.user.id };
-  
-    if (status) query.status = status;
-    if (search) query.title = new RegExp(search, 'i');
-  
-    const sortOrder = sort || 'desc'; // Default to 'desc' if not provided
-    const sortOption = sortOrder === 'desc' ? -1 : 1;
-  
-    const tasks = await Task.find(query).sort({ createdAt: sortOption });
-  
-    res.render('index', { user: req.user, tasks, csrfToken: req.csrfToken(), sortOrder });
+  res.render('index', { 
+    user: req.user, 
+    tasks, 
+    csrfToken: req.csrfToken(), 
+    sortOrder: sort || 'newest', 
+    status: status || '' 
   });
-  
+});
 
+
+
+
+// Admin Page
 app.get('/admin', authenticateToken, isAdmin, async (req, res) => {
   const tasks = await Task.find().populate('userId', 'name');
   res.render('admin', { tasks, csrfToken: req.csrfToken() });
 });
 
-app.get('/login', (req, res) => res.render('login', { csrfToken: req.csrfToken() }));
-app.get('/register', (req, res) => res.render('register', { csrfToken: req.csrfToken() }));
+// Login & Registration Pages 
+app.get('/login', (req, res) => {
+  res.render('login', { error: null, csrfToken: req.csrfToken() });
+});
+
+app.get('/register', (req, res) => {
+  res.render('register', { errors: [], csrfToken: req.csrfToken() }); 
+});
+
 app.get('/tasks/new', authenticateToken, (req, res) => {
   res.render('new-task', { csrfToken: req.csrfToken() });
 });
 
-// Registration
+// Registration 
 app.post('/register', [
-  check('email').isEmail(),
-  check('password').isLength({ min: 6 })
+  check('email').isEmail().withMessage('Invalid email format'),
+  check('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long')
 ], async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.render('register', { errors: errors.array(), csrfToken: req.csrfToken() });
   
+  if (!errors.isEmpty()) {
+    return res.render('register', { 
+      errors: errors.array(), 
+      csrfToken: req.csrfToken() 
+    });
+  }
+
   const { name, email, password, role } = req.body;
+  const existingUser = await User.findOne({ email });
+
+  if (existingUser) {
+    return res.render('register', { 
+      errors: [{ msg: 'Email already exists' }], 
+      csrfToken: req.csrfToken() 
+    });
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
   await User.create({ name, email, password: hashedPassword, role });
+
   res.redirect('/login');
 });
 
 // Login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.render('login', { 
+      error: 'Email and password are required', 
+      csrfToken: req.csrfToken() 
+    });
+  }
+
   const user = await User.findOne({ email });
   if (!user || !await bcrypt.compare(password, user.password)) {
-    return res.render('login', { error: 'Invalid credentials', csrfToken: req.csrfToken() });
+    return res.render('login', { 
+      error: 'Invalid email or password', 
+      csrfToken: req.csrfToken() 
+    });
   }
+
   const token = jwt.sign(
     { id: user._id, name: user.name, role: user.role }, 
     process.env.JWT_SECRET
   );
+
   req.session.token = token;
   res.redirect('/');
 });
@@ -181,7 +181,6 @@ app.post('/tasks/complete/:id', authenticateToken, async (req, res) => {
     await Task.findByIdAndUpdate(id, { status: 'Completed' });
     res.redirect('/');
 });
-
 
 // Logout
 app.get('/logout', (req, res) => {

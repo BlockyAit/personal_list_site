@@ -1,47 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task List</title>
+    <style>
+        .error-message { color: red; }
+        .success-message { color: green; }
+    </style>
 </head>
 <body>
     <h1>Welcome, <%= user.name %></h1>
+    
     <a href="/logout">Logout</a>
     <a href="/tasks/new">Add New Task</a>
 
-    <!-- Task Filtering and Searching -->
     <form action="/" method="GET">
-        <input type="text" name="search" placeholder="Search tasks by title" />
+        <input type="text" name="search" placeholder="Search tasks by title">
         <select name="status">
             <option value="">All</option>
-            <option value="Pending">Pending</option>
-            <option value="Completed">Completed</option>
+            <option value="Pending" <% if (status === 'Pending') { %> selected <% } %>>Pending</option>
+            <option value="Completed" <% if (status === 'Completed') { %> selected <% } %>>Completed</option>
         </select>
         <button type="submit">Filter</button>
     </form>
 
-    <!-- Sorting Options -->
-    <form action="/" method="GET">
+    <form method="GET" action="/">
         <label for="sort">Sort by:</label>
-        <select name="sort" id="sort" onchange="this.form.submit()">
-            <option value="desc" <% if (sortOrder === 'desc') { %> selected <% } %>>Newest First</option>
-            <option value="asc" <% if (sortOrder === 'asc') { %> selected <% } %>>Oldest First</option>
+        <select name="sort" id="sort">
+            <option value="newest" <% if (sortOrder === 'newest') { %> selected <% } %>>Newest</option>
+            <option value="oldest" <% if (sortOrder === 'oldest') { %> selected <% } %>>Oldest</option>
         </select>
+        <button type="submit">Sort</button>
     </form>
     
-    
 
-    <ul>
-        <% tasks.forEach(task => { %>
-            <li>
-                <strong><%= task.title %></strong> - <%= task.status %> - Created by: <%= task.userName %>
-                <% if (task.status !== 'Completed') { %>
-                    <form action="/tasks/complete/<%= task._id %>" method="POST">
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        <button type="submit">Mark as Complete</button>
-                    </form>                    
-                <% } %>
-            </li>
-        <% }); %>
-    </ul>
+    <% if (tasks.length === 0) { %>
+        <p>No tasks found.</p>
+    <% } else { %>
+        <ul>
+            <% tasks.forEach(task => { %>
+                <li>
+                    <strong><%= task.title %></strong> - <%= task.status %>
+                    <% if (task.status !== 'Completed') { %>
+                        <form action="/tasks/complete/<%= task._id %>" method="POST">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <button type="submit">Mark as Complete</button>
+                        </form>                    
+                    <% } %>
+                </li>
+            <% }); %>
+        </ul>
+    <% } %>
 </body>
 </html>

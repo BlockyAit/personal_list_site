@@ -1,18 +1,40 @@
 <!DOCTYPE html>
-  <html>
-  <head><title>Register</title></head>
-  <body>
-    <form action='/register' method='POST'>
-      <input type='hidden' name='_csrf' value='<%= csrfToken %>' />
-      <input type='text' name='name' placeholder='Name' required />
-      <input type='email' name='email' placeholder='Email' required />
-      <input type='password' name='password' placeholder='Password' required />
-      <label for='role'>Role:</label>
-      <select name='role' required>
-        <option value='user'>User</option>
-        <option value='admin'>Admin</option>
-      </select>
-      <button type='submit'>Register</button>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <style>
+        .error-messages { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Register</h1>
+    
+    <% if (errors && errors.length > 0) { %>
+      <ul class="error-messages">
+          <% errors.forEach(error => { %>
+              <li><%= error.msg %></li>
+          <% }); %>
+      </ul>
+  <% } %>
+  
+
+    <form action="/register" method="POST">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="text" name="name" placeholder="Name" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Password" required>
+        
+        <label for="role">Role:</label>
+        <select name="role" required>
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+        </select>
+        
+        <button type="submit">Register</button>
     </form>
-  </body>
-  </html>
+
+    <p>Already have an account? <a href="/login">Login</a></p>
+</body>
+</html>
